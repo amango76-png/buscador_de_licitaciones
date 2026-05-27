@@ -1,6 +1,5 @@
 """
 Monitor de Licitaciones - Scraper
-Usa la API pública de datos abiertos de COMPR.AR y BAC.
 Corre diariamente via GitHub Actions.
 """
 
@@ -45,17 +44,15 @@ PALABRAS_CLAVE = {
 }
 
 PORTALES = [
-    {"id": "garrahan", "nombre": "Garrahan", "url": "https://compras.garrahan.gov.ar/Licitaciones/Llamado", "color": "coral"},
-    {"id": "comprar", "nombre": "COMPR.AR",            "url": "https://comprar.gob.ar",            "color": "blue"},
-    {"id": "bac", "nombre": "PBAC Prov. BA", "url": "https://pbac.cgp.gba.gov.ar", "color": "teal"},
+    {"id": "comprar",  "nombre": "COMPR.AR",   "url": "https://comprar.gob.ar",                          "color": "blue"},
+    {"id": "garrahan", "nombre": "Garrahan",   "url": "https://compras.garrahan.gov.ar/Licitaciones/Llamado", "color": "coral"},
 ]
 
 OUTPUT_FILE = Path("data/licitaciones.json")
-
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
 # ─────────────────────────────────────────────
-# CLASIFICACIÓN
+# HELPERS
 # ─────────────────────────────────────────────
 
 def clasificar_rubro(texto: str) -> str:
@@ -66,175 +63,164 @@ def clasificar_rubro(texto: str) -> str:
                 return rubro
     return "otros"
 
+def fmt_fecha(raw: str) -> str:
+    if not raw or raw == "None":
+        return raw
+    for fmt in ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%d/%m/%Y"]:
+        try:
+            return datetime.strptime(raw[:19], fmt[:len(raw[:19])]).strftime("%d/%m/%Y %H:%M")
+        except Exception:
+            continue
+    return raw
+
+def hacer_item(nro, nombre, tipo, apertura, organismo, estado, portalId, url) -> dict:
+    return {
+        "nro": str(nro or ""),
+        "nombre": str(nombre or ""),
+        "tipo": str(tipo or ""),
+        "apertura": fmt_fecha(str(apertura or "")),
+        "organismo": str(organismo or ""),
+        "estado": estado,
+        "rubro": clasificar_rubro(str(nombre or "") + " " + str(tipo or "")),
+        "portalId": portalId,
+        "url": url,
+        "fechaCarga": date.today().isoformat(),
+    }
+
 # ─────────────────────────────────────────────
-# COMPR.AR — API pública ONC
+# COMPR.AR
 # ─────────────────────────────────────────────
 
-def scrape_comprar() -> list[dict]:
+def scrape_comprar() -> list:
     licitaciones = []
 
-    # Endpoint 1: procesos con apertura próxima (no requiere auth)
-    urls = [
-        "https://comprar.gob.ar/Compras.aspx?qs=W1HXHGH+OSd9IYRU8enSvp5OQMH2Cz3mU9hZi+A0aECfB+EWQF0rkIibVfzexIYx",
-    ]
-
-    # API de datos abiertos ONC
-    api_endpoints = [
+    # API datos.gob.ar — dataset ONC procesos de compra
+    endpoints = [
         "https://datos.gob.ar/api/3/action/datastore_search?resource_id=4b7447cb-3140-4c8e-a1c1-4a4288e3c0e1&limit=200",
         "https://datos.gob.ar/api/3/action/datastore_search?resource_id=27e9bc62-3ac9-4bca-9098-34ae42e5fd1e&limit=200",
     ]
 
-    for api_url in api_endpoints:
+    for url in endpoints:
         try:
-            resp = requests.get(api_url, headers=HEADERS, timeout=20)
+            resp = requests.get(url, headers=HEADERS, timeout=20)
             data = resp.json()
             records = data.get("result", {}).get("records", [])
-            print(f"     API datos.gob.ar: {len(records)} registros")
-
+            print(f"     COMPR.AR API: {len(records)} registros")
             for r in records:
-                nombre = str(r.get("objeto_del_proceso", r.get("descripcion", r.get("nombre_proceso", ""))))
-                if not nombre or nombre == "None":
+                if not isinstance(r, dict):
                     continue
-                nro = str(r.get("numero_proceso", r.get("nro_proceso", r.get("id_proceso", ""))))
-                tipo = str(r.get("tipo_proceso", r.get("clase_proceso", "")))
-                apertura = str(r.get("fecha_apertura", r.get("fecha_publicacion", "")))
-                organismo = str(r.get("unidad_operativa_de_contrataciones", r.get("organismo", "")))
-                estado_raw = str(r.get("estado_proceso", r.get("estado", ""))).lower()
-
+                nombre = r.get("objeto_del_proceso") or r.get("descripcion") or r.get("nombre_proceso") or ""
+                if not nombre:
+                    continue
+                estado_raw = str(r.get("estado_proceso") or r.get("estado") or "").lower()
                 if "publicad" in estado_raw or "llamad" in estado_raw:
                     estado = "nuevo"
                 elif "abiert" in estado_raw:
                     estado = "abierto"
                 else:
                     estado = "proximo"
-
-                # Formatear fecha
-                if apertura and apertura != "None":
-                    try:
-                        for fmt in ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%d/%m/%Y"]:
-                            try:
-                                dt = datetime.strptime(apertura[:19], fmt[:len(apertura[:19])])
-                                apertura = dt.strftime("%d/%m/%Y %H:%M")
-                                break
-                            except:
-                                continue
-                    except:
-                        pass
-
-                rubro = clasificar_rubro(nombre + " " + tipo)
-                licitaciones.append({
-                    "nro": nro,
-                    "nombre": nombre,
-                    "tipo": tipo,
-                    "apertura": apertura,
-                    "organismo": organismo,
-                    "estado": estado,
-                    "rubro": rubro,
-                    "portalId": "comprar",
-                    "url": "https://comprar.gob.ar",
-                    "fechaCarga": date.today().isoformat(),
-                })
-
+                licitaciones.append(hacer_item(
+                    nro       = r.get("numero_proceso") or r.get("nro_proceso") or r.get("id_proceso"),
+                    nombre    = nombre,
+                    tipo      = r.get("tipo_proceso") or r.get("clase_proceso"),
+                    apertura  = r.get("fecha_apertura") or r.get("fecha_publicacion"),
+                    organismo = r.get("unidad_operativa_de_contrataciones") or r.get("organismo"),
+                    estado    = estado,
+                    portalId  = "comprar",
+                    url       = "https://comprar.gob.ar",
+                ))
             if licitaciones:
-                break  # si funcionó, no probar el siguiente endpoint
-
+                break
         except Exception as e:
-            print(f"     Error API {api_url}: {e}")
-            continue
+            print(f"     COMPR.AR error ({url[-40:]}): {e}")
 
-    # Si la API no devolvió nada, intentar endpoint alternativo ONC
-    if not licitaciones:
-        licitaciones = scrape_comprar_alternativo()
-
+    print(f"     Total COMPR.AR: {len(licitaciones)}")
     return licitaciones
 
-
-def scrape_comprar_alternativo() -> list[dict]:
-    """Endpoint alternativo: API REST de ONC."""
-    licitaciones = []
-    try:
-        # API REST pública de la ONC
-        url = "https://comprar.gob.ar/comprarpublico/rest/licitaciones/apertura-proxima"
-        resp = requests.get(url, headers=HEADERS, timeout=20)
-        items = resp.json()
-        if isinstance(items, list):
-            for item in items:
-                nombre = item.get("descripcion", item.get("nombre", ""))
-                rubro = clasificar_rubro(nombre)
-                licitaciones.append({
-                    "nro": str(item.get("numeroProceso", "")),
-                    "nombre": nombre,
-                    "tipo": item.get("tipoProceso", ""),
-                    "apertura": item.get("fechaApertura", ""),
-                    "organismo": item.get("unidadOperativa", ""),
-                    "estado": "proximo",
-                    "rubro": rubro,
-                    "portalId": "comprar",
-                    "url": "https://comprar.gob.ar",
-                    "fechaCarga": date.today().isoformat(),
-                })
-    except Exception as e:
-        print(f"     Error REST ONC: {e}")
-    return licitaciones
-
-
 # ─────────────────────────────────────────────
-# BAC — API datos abiertos GCBA
+# GARRAHAN
 # ─────────────────────────────────────────────
 
-def scrape_bac() -> list[dict]:
-    """BAC y PBAC bloquean acceso automático. Por ahora retorna vacío."""
-    print("     BAC/PBAC: acceso bloqueado por el portal (requiere login)")
-    return []
-
-    
-def scrape_garrahan() -> list[dict]:
-    """Hospital Garrahan — página pública sin login."""
+def scrape_garrahan() -> list:
     licitaciones = []
+    url = "https://compras.garrahan.gov.ar/Licitaciones/Llamado"
     try:
-        url = "https://compras.garrahan.gov.ar/Licitaciones/Llamado"
         resp = requests.get(url, headers=HEADERS, timeout=20)
         soup = BeautifulSoup(resp.text, "html.parser")
         tabla = soup.find("table")
         if not tabla:
-            print("     Garrahan: sin tabla encontrada")
+            print("     Garrahan: sin tabla en la página")
             return []
-        filas = tabla.find_all("tr")[2:]  # saltar 2 filas de header
+        filas = tabla.find_all("tr")[2:]  # saltar 2 filas de encabezado
         for fila in filas:
             celdas = fila.find_all("td")
             if len(celdas) < 5:
                 continue
-            anio    = celdas[0].get_text(strip=True)
-            tipo    = celdas[1].get_text(strip=True)
-            nro     = celdas[2].get_text(strip=True)
-            nombre  = celdas[3].get_text(strip=True)
+            anio     = celdas[0].get_text(strip=True)
+            tipo     = celdas[1].get_text(strip=True)
+            nro      = celdas[2].get_text(strip=True)
+            nombre   = celdas[3].get_text(strip=True)
             apertura = celdas[4].get_text(strip=True)
-            hora    = celdas[5].get_text(strip=True) if len(celdas) > 5 else ""
+            hora     = celdas[5].get_text(strip=True) if len(celdas) > 5 else ""
             if not nombre:
                 continue
-            # buscar link al pliego
             link_tag = fila.find("a")
-            link = link_tag["href"] if link_tag and link_tag.get("href") else url
-            if link.startswith("/"):
-                link = "https://compras.garrahan.gov.ar" + link
-            rubro = clasificar_rubro(nombre + " " + tipo)
-            licitaciones.append({
-                "nro": f"{anio}-{nro}",
-                "nombre": nombre,
-                "tipo": tipo,
-                "apertura": f"{apertura} {hora}".strip(),
-                "organismo": "Hospital Garrahan",
-                "estado": "proximo",
-                "rubro": rubro,
-                "portalId": "garrahan",
-                "url": link,
-                "fechaCarga": date.today().isoformat(),
-            })
+            link = url
+            if link_tag and link_tag.get("href"):
+                href = link_tag["href"]
+                link = href if href.startswith("http") else "https://compras.garrahan.gov.ar" + href
+            licitaciones.append(hacer_item(
+                nro       = f"{anio}-{nro}",
+                nombre    = nombre,
+                tipo      = tipo,
+                apertura  = f"{apertura} {hora}".strip(),
+                organismo = "Hospital Garrahan",
+                estado    = "proximo",
+                portalId  = "garrahan",
+                url       = link,
+            ))
         print(f"     Garrahan: {len(licitaciones)} licitaciones")
     except Exception as e:
         print(f"     Garrahan error: {e}")
     return licitaciones
 
+# ─────────────────────────────────────────────
+# PLANTILLA PARA NUEVO PORTAL
+# ─────────────────────────────────────────────
+# Para agregar un portal nuevo:
+# 1. Copiá esta función y renombrala
+# 2. Adaptá la URL y el parsing
+# 3. Llamala desde main()
+# 4. Agregá el portal a la lista PORTALES arriba
+
+def scrape_portal_nuevo(nombre_portal: str, url: str, portal_id: str) -> list:
+    licitaciones = []
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=20)
+        soup = BeautifulSoup(resp.text, "html.parser")
+        tabla = soup.find("table")
+        if not tabla:
+            return []
+        for fila in tabla.find_all("tr")[1:]:
+            celdas = fila.find_all("td")
+            if len(celdas) < 3:
+                continue
+            nombre = celdas[0].get_text(strip=True)
+            if not nombre:
+                continue
+            licitaciones.append(hacer_item(
+                nro=celdas[1].get_text(strip=True) if len(celdas) > 1 else "",
+                nombre=nombre,
+                tipo="",
+                apertura=celdas[2].get_text(strip=True) if len(celdas) > 2 else "",
+                organismo=nombre_portal,
+                estado="proximo",
+                portalId=portal_id,
+                url=url,
+            ))
+    except Exception as e:
+        print(f"     {nombre_portal} error: {e}")
+    return licitaciones
 
 # ─────────────────────────────────────────────
 # MAIN
@@ -242,46 +228,40 @@ def scrape_garrahan() -> list[dict]:
 
 def main():
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Iniciando scraping...")
-
     todas = []
 
     print("  → Consultando COMPR.AR...")
-    comprar = scrape_comprar()
-    print(f"     Total: {len(comprar)} licitaciones")
-    todas.extend(comprar)
+    todas.extend(scrape_comprar())
 
-    print("  → Consultando Buenos Aires Compras...")
-    bac = scrape_bac()
-    print(f"     Total: {len(bac)} licitaciones")
-    todas.extend(bac)
-    
     print("  → Consultando Hospital Garrahan...")
-    garrahan = scrape_garrahan()
-    todas.extend(garrahan)
+    todas.extend(scrape_garrahan())
 
+    # Verificar que todos los items son dicts válidos
+    todas = [l for l in todas if isinstance(l, dict) and l.get("nombre")]
 
     # Ordenar: médicos primero, luego por estado
-    orden_rubro = {"descartables": 0, "tecmed": 1, "lab": 2, "farmacia": 3, "otros": 4}
+    orden_rubro  = {"descartables": 0, "tecmed": 1, "lab": 2, "farmacia": 3, "otros": 4}
     orden_estado = {"nuevo": 0, "proximo": 1, "abierto": 2}
     todas.sort(key=lambda x: (orden_rubro.get(x["rubro"], 9), orden_estado.get(x["estado"], 9)))
 
     medicos = [l for l in todas if l["rubro"] != "otros"]
     print(f"\n  ✓ Total: {len(todas)} licitaciones ({len(medicos)} de rubros médicos)")
-
     for rubro in ["descartables", "tecmed", "lab", "farmacia", "otros"]:
         n = len([l for l in todas if l["rubro"] == rubro])
-        if n: print(f"    {rubro}: {n}")
+        if n:
+            print(f"    {rubro}: {n}")
 
     OUTPUT_FILE.parent.mkdir(exist_ok=True)
-    output = {
-        "actualizacion": datetime.now().isoformat(),
-        "total": len(todas),
-        "licitaciones": todas,
-        "portales": PORTALES,
-    }
-    OUTPUT_FILE.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+    OUTPUT_FILE.write_text(
+        json.dumps({
+            "actualizacion": datetime.now().isoformat(),
+            "total": len(todas),
+            "licitaciones": todas,
+            "portales": PORTALES,
+        }, ensure_ascii=False, indent=2),
+        encoding="utf-8"
+    )
     print(f"  ✓ Guardado en {OUTPUT_FILE}")
-
 
 if __name__ == "__main__":
     main()
