@@ -1,12 +1,36 @@
 {
-  "actualizacion": "2026-05-27T12:50:26.674800",
+  "actualizacion": "2026-05-27T13:40:29.736385",
   "total": 12,
   "licitaciones": [
     {
-      "nro": "38/15-0162-LPU26",
-      "nombre": "Servicio de transporte de material modo marítimo desde y hacia Europa.",
+      "nro": "84/13-0734-LPR26",
+      "nombre": "ADQUISICIÓN DE INSUMO PARA PRODUCCIÓN DE MEDICAMENTOS",
+      "tipo": "Licitación Privada",
+      "apertura": "27/05/2026 11:00 Hrs.",
+      "organismo": "Publicado",
+      "estado": "proximo",
+      "rubro": "farmacia",
+      "portalId": "comprar",
+      "url": "https://comprar.gob.ar/javascript:__doPostBack('ctl00$CPH1$GridListaPliegosAperturaProxima$ctl04$lnkNumeroProceso','')",
+      "fechaCarga": "2026-05-27"
+    },
+    {
+      "nro": "80-0008-LPU26",
+      "nombre": "Provisión de Vacunas Anti Hepatitis A Pediátrica con servicio de logística incluido",
       "tipo": "Licitación Pública",
-      "apertura": "27/05/2026 10:00 Hrs.",
+      "apertura": "27/05/2026 13:00 Hrs.",
+      "organismo": "Publicado",
+      "estado": "proximo",
+      "rubro": "farmacia",
+      "portalId": "comprar",
+      "url": "https://comprar.gob.ar/javascript:__doPostBack('ctl00$CPH1$GridListaPliegosAperturaProxima$ctl11$lnkNumeroProceso','')",
+      "fechaCarga": "2026-05-27"
+    },
+    {
+      "nro": "92-0013-CDI26",
+      "nombre": "REEMPLAZO DE VIDRIO EN SALA ORTIZ DEL EDIFICIO DE LA BIBLIOTECA NACIONAL MARIANO MORENO.",
+      "tipo": "Contratación Directa",
+      "apertura": "27/05/2026 11:00 Hrs.",
       "organismo": "Publicado",
       "estado": "proximo",
       "rubro": "otros",
@@ -15,10 +39,10 @@
       "fechaCarga": "2026-05-27"
     },
     {
-      "nro": "38/15-0163-LPU26",
-      "nombre": "Servicio de transporte de material modo aéreo desde y hacia los Estados Unidos de América.",
-      "tipo": "Licitación Pública",
-      "apertura": "27/05/2026 10:00 Hrs.",
+      "nro": "95-0001-LPR26",
+      "nombre": "ADQUISICIÓN DE INSUMOS/REPUESTOS P/ESTACIONES DE TRABAJO, SERVIDORES Y LIBRERÍAS DE CINTAS",
+      "tipo": "Licitación Privada",
+      "apertura": "27/05/2026 11:00 Hrs.",
       "organismo": "Publicado",
       "estado": "proximo",
       "rubro": "otros",
@@ -27,22 +51,10 @@
       "fechaCarga": "2026-05-27"
     },
     {
-      "nro": "38/15-0180-LPU26",
-      "nombre": "Servicio de transporte de carga internacional modo marítimo desde y hacia EEUU",
-      "tipo": "Licitación Pública",
-      "apertura": "27/05/2026 10:00 Hrs.",
-      "organismo": "Publicado",
-      "estado": "proximo",
-      "rubro": "otros",
-      "portalId": "comprar",
-      "url": "https://comprar.gob.ar/javascript:__doPostBack('ctl00$CPH1$GridListaPliegosAperturaProxima$ctl04$lnkNumeroProceso','')",
-      "fechaCarga": "2026-05-27"
-    },
-    {
-      "nro": "40/39-0084-LPR26",
-      "nombre": "Servicio de Recolección de Residuos Patogénicos para el Instituto Geriátrico Ntra. de Loreto",
-      "tipo": "Licitación Privada",
-      "apertura": "27/05/2026 10:00 Hrs.",
+      "nro": "40/20-0381-CDI26",
+      "nombre": "SERVICIO DE MANTENIMIENTO Y PRUEBA HIDRAULICA DE MATAFUEGOS",
+      "tipo": "Contratación Directa",
+      "apertura": "27/05/2026 12:00 Hrs.",
       "organismo": "Publicado",
       "estado": "proximo",
       "rubro": "otros",
@@ -51,10 +63,10 @@
       "fechaCarga": "2026-05-27"
     },
     {
-      "nro": "38/38-0445-LPR26",
-      "nombre": "SERVICIO DE CONTROL, MANTENIMIENTO Y RECARGA DE EXTINTORES",
-      "tipo": "Licitación Privada",
-      "apertura": "27/05/2026 10:00 Hrs.",
+      "nro": "23-0009-LPU26",
+      "nombre": "Servicio de ajustes y mantenimiento integral de ascensores de edificios de SGP",
+      "tipo": "Licitación Pública",
+      "apertura": "27/05/2026 12:00 Hrs.",
       "organismo": "Publicado",
       "estado": "proximo",
       "rubro": "otros",
@@ -63,10 +75,10 @@
       "fechaCarga": "2026-05-27"
     },
     {
-      "nro": "40/39-0063-LPR26",
-      "nombre": "Servicio de alquiler, lavado y esterilizado de ropa quirúrgica para el Servicio Planta Técnica H.A.C",
-      "tipo": "Licitación Privada",
-      "apertura": "27/05/2026 10:00 Hrs.",
+      "nro": "44-0004-CDI26",
+      "nombre": "Mantenimiento y Reparación del Sistema de Control de Acceso Físico",
+      "tipo": "Contratación Directa",
+      "apertura": "27/05/2026 12:00 Hrs.",
       "organismo": "Publicado",
       "estado": "proximo",
       "rubro": "otros",
@@ -75,10 +87,10 @@
       "fechaCarga": "2026-05-27"
     },
     {
-      "nro": "84/13-0785-LPR26",
-      "nombre": "PERMUTA TN DE MEMBRILLO POR REPUESTOS PARA CAMIONETA CHEVROLET S10 2.8 TDI STD 4X4 MODELO 2010 - ECN",
+      "nro": "38/22-0496-LPR26",
+      "nombre": "Adquisición de lentes zoom y teleconversor para el Depart. Comunicación Institucional de la DIRI",
       "tipo": "Licitación Privada",
-      "apertura": "27/05/2026 10:00 Hrs.",
+      "apertura": "27/05/2026 12:00 Hrs.",
       "organismo": "Publicado",
       "estado": "proximo",
       "rubro": "otros",
@@ -87,10 +99,10 @@
       "fechaCarga": "2026-05-27"
     },
     {
-      "nro": "84/134-0660-LPR26",
-      "nombre": "CONTRATAR EL SERVICIO VTV-RTO PARA EL 2DO TRIMESTRE DEL 2026 PARA EL CFDR",
-      "tipo": "Licitación Privada",
-      "apertura": "27/05/2026 10:00 Hrs.",
+      "nro": "76-0009-CDI26",
+      "nombre": "ADQUISICIÓN DE INDUMENTARIA Y ELEMENTOS DE PROTECCIÓN PERSONAL PARA LOS AGENTES QUE PRESTAN SERVICIO",
+      "tipo": "Contratación Directa",
+      "apertura": "27/05/2026 12:00 Hrs.",
       "organismo": "Publicado",
       "estado": "proximo",
       "rubro": "otros",
@@ -99,27 +111,15 @@
       "fechaCarga": "2026-05-27"
     },
     {
-      "nro": "38/37-0072-CDI26",
-      "nombre": "CAMPERAS DE TRABAJO",
+      "nro": "509/3-0018-CDI26",
+      "nombre": "Adq. de motores forzadores",
       "tipo": "Contratación Directa",
-      "apertura": "27/05/2026 10:00 Hrs.",
+      "apertura": "27/05/2026 12:00 Hrs.",
       "organismo": "Publicado",
       "estado": "proximo",
       "rubro": "otros",
       "portalId": "comprar",
       "url": "https://comprar.gob.ar/javascript:__doPostBack('ctl00$CPH1$GridListaPliegosAperturaProxima$ctl10$lnkNumeroProceso','')",
-      "fechaCarga": "2026-05-27"
-    },
-    {
-      "nro": "40/39-0093-LPR26",
-      "nombre": "Adquisición de soluciones parentales de gran volumen",
-      "tipo": "Licitación Privada",
-      "apertura": "27/05/2026 10:00 Hrs.",
-      "organismo": "Publicado",
-      "estado": "proximo",
-      "rubro": "otros",
-      "portalId": "comprar",
-      "url": "https://comprar.gob.ar/javascript:__doPostBack('ctl00$CPH1$GridListaPliegosAperturaProxima$ctl11$lnkNumeroProceso','')",
       "fechaCarga": "2026-05-27"
     },
     {
