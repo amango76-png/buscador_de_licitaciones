@@ -5,6 +5,7 @@ Corre diariamente via GitHub Actions.
 """
 
 import requests
+from bs4 import BeautifulSoup
 import json
 from datetime import datetime, date
 from pathlib import Path
@@ -182,39 +183,11 @@ def scrape_comprar_alternativo() -> list[dict]:
 # ─────────────────────────────────────────────
 
 def scrape_bac() -> list[dict]:
-    """
-    BAC bloquea acceso automático (403).
-    Usamos PBAC (Provincia de Buenos Aires) que sí tiene datos abiertos.
-    """
-    licitaciones = []
-    try:
-        # PBAC - Provincia de Buenos Aires datos abiertos
-        url = "https://datos.gba.gob.ar/api/3/action/datastore_search?resource_id=7a3c4e5d-1234-5678-abcd-ef1234567890&limit=200"
-        resp = requests.get(url, headers=HEADERS, timeout=20)
-        data = resp.json()
-        records = data.get("result", {}).get("records", [])
-        print(f"     PBAC: {len(records)} registros")
-        for r in records:
-            nombre = str(r.get("descripcion", r.get("nombre", "")))
-            if not nombre or nombre == "None":
-                continue
-            rubro = clasificar_rubro(nombre)
-            licitaciones.append({
-                "nro": str(r.get("numero", "")),
-                "nombre": nombre,
-                "tipo": str(r.get("tipo", "")),
-                "apertura": str(r.get("fecha_apertura", "")),
-                "organismo": str(r.get("organismo", "")),
-                "estado": "proximo",
-                "rubro": rubro,
-                "portalId": "bac",
-                "url": "https://pbac.cgp.gba.gov.ar",
-                "fechaCarga": date.today().isoformat(),
-            })
-    except Exception as e:
-        print(f"     PBAC error: {e}")
-    return licitaciones , 
+    """BAC y PBAC bloquean acceso automático. Por ahora retorna vacío."""
+    print("     BAC/PBAC: acceso bloqueado por el portal (requiere login)")
+    return []
 
+    
 def scrape_garrahan() -> list[dict]:
     """Hospital Garrahan — página pública sin login."""
     licitaciones = []
