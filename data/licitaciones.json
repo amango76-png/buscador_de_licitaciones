@@ -1,5 +1,5 @@
 {
-  "actualizacion": "2026-05-27T14:48:15.346726",
+  "actualizacion": "2026-05-27T15:19:46.168261",
   "total": 0,
   "licitaciones": [],
   "portales": [
@@ -10,10 +10,10 @@
       "color": "blue"
     },
     {
-      "id": "bac",
-      "nombre": "Buenos Aires Compras",
-      "url": "https://buenosairescompras.gob.ar",
-      "color": "teal"
+      "id": "garrahan",
+      "nombre": "Garrahan",
+      "url": "https://compras.garrahan.gov.ar/Licitaciones/Llamado",
+      "color": "coral"
     }
   ]
 }
