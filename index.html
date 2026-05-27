@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Monitor de Licitaciones Médicas</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f9f9f8;
+    --surface: #ffffff;
+    --surface2: #f1efe8;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --text2: #5a5a57;
+    --text3: #8a8a86;
+    --blue-bg: #e6f1fb; --blue-fg: #0c447c;
+    --teal-bg: #e1f5ee; --teal-fg: #085041;
+    --purple-bg: #eeedfe; --purple-fg: #3c3489;
+    --amber-bg: #faeeda; --amber-fg: #633806;
+    --coral-bg: #faece7; --coral-fg: #712b13;
+    --green-bg: #eaf3de; --green-fg: #3b6d11;
+    --warn-bg: #faeeda; --warn-fg: #633806;
+    --success-bg: #eaf3de; --success-fg: #3b6d11;
+    --info-bg: #e6f1fb; --info-fg: #185fa5;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --surface: #242422; --surface2: #2e2e2b;
+      --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.18);
+      --text: #f0efe8; --text2: #a8a8a4; --text3: #6a6a66;
+      --blue-bg: #0c447c; --blue-fg: #b5d4f4;
+      --teal-bg: #085041; --teal-fg: #9fe1cb;
+      --purple-bg: #3c3489; --purple-fg: #cecbf6;
+      --amber-bg: #633806; --amber-fg: #fac775;
+      --coral-bg: #712b13; --coral-fg: #f5c4b3;
+      --green-bg: #27500a; --green-fg: #c0dd97;
+      --warn-bg: #633806; --warn-fg: #fac775;
+      --success-bg: #27500a; --success-fg: #c0dd97;
+      --info-bg: #0c447c; --info-fg: #b5d4f4;
+    }
+  }
+
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
+
+  /* HEADER */
+  .header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding-bottom: 1.25rem; border-bottom: 0.5px solid var(--border); margin-bottom: 1.25rem; }
+  .header-left h1 { font-size: 20px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .header-left p { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .badge-live { display: inline-flex; align-items: center; gap: 5px; background: var(--success-bg); color: var(--success-fg); font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 500; }
+  .dot-anim { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+  .last-up { font-size: 11px; color: var(--text3); }
+
+  /* MÉTRICAS */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 1.25rem; }
+  .metric { background: var(--surface2); border-radius: 8px; padding: 0.75rem 1rem; }
+  .metric.highlight { background: var(--warn-bg); }
+  .metric-label { font-size: 11px; color: var(--text2); margin-bottom: 3px; }
+  .metric-val { font-size: 24px; font-weight: 500; line-height: 1; }
+  .metric.highlight .metric-val { color: var(--warn-fg); }
+  .metric-sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+  /* RUBROS */
+  .rubros { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+  .rubro-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 5px 11px; border-radius: 999px; font-weight: 500; cursor: pointer; border: 1.5px solid transparent; opacity: 0.45; transition: opacity .15s; user-select: none; }
+  .rubro-chip.on { opacity: 1; border-color: currentColor; }
+  .rc-todos   { background: var(--surface2); color: var(--text); border: 0.5px solid var(--border2) !important; }
+  .rc-desc    { background: var(--teal-bg);   color: var(--teal-fg); }
+  .rc-tecmed  { background: var(--blue-bg);   color: var(--blue-fg); }
+  .rc-lab     { background: var(--purple-bg); color: var(--purple-fg); }
+  .rc-farm    { background: var(--amber-bg);  color: var(--amber-fg); }
+  .rc-otros   { background: var(--surface2);  color: var(--text2); border-style: dashed !important; }
+
+  /* PORTALES */
+  .portales-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; margin-bottom: 1.25rem; overflow: hidden; }
+  .portales-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--surface2); border-bottom: 0.5px solid var(--border); }
+  .portales-header span { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .portales-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+  .portal-pill { display: flex; align-items: center; gap: 7px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; }
+  .portal-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .portal-name { font-weight: 500; color: var(--text); }
+  .portal-sub { font-size: 10px; color: var(--text3); }
+  .btn-add { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 5px 11px; background: none; border: 0.5px solid var(--info-bg); color: var(--info-fg); border-radius: 6px; cursor: pointer; }
+  .btn-add:hover { background: var(--info-bg); }
+  .add-form { display: none; padding: 12px 14px; border-top: 0.5px solid var(--border); background: var(--surface2); }
+  .add-form.open { display: block; }
+  .add-form-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .field { flex: 1; min-width: 120px; }
+  .field label { font-size: 11px; color: var(--text2); display: block; margin-bottom: 3px; }
+  .field input, .field select { width: 100%; padding: 6px 9px; font-size: 13px; background: var(--surface); border: 0.5px solid var(--border2); border-radius: 6px; color: var(--text); }
+  .btn-save { padding: 6px 14px; font-size: 13px; background: none; border: 0.5px solid var(--border2); border-radius: 6px; cursor: pointer; color: var(--text); }
+  .btn-save:hover { background: var(--surface2); }
+
+  /* CONTROLES */
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .controls input[type=text] { flex: 1; min-width: 180px; padding: 7px 10px; font-size: 13px; background: var(--surface); border: 0.5px solid var(--border2); border-radius: 6px; color: var(--text); }
+  .controls select { padding: 7px 10px; font-size: 13px; background: var(--surface); border: 0.5px solid var(--border2); border-radius: 6px; color: var(--text); }
+  .btn-refresh { display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px; font-size: 13px; background: none; border: 0.5px solid var(--border2); border-radius: 6px; cursor: pointer; color: var(--text); white-space: nowrap; }
+  .btn-refresh:hover { background: var(--surface2); }
+
+  /* TABLA */
+  .table-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 1.25rem; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px; }
+  th { background: var(--surface2); color: var(--text2); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: left; border-bottom: 0.5px solid var(--border); white-space: nowrap; }
+  td { padding: 9px 10px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  tr.relevant td:first-child { border-left: 3px solid #1D9E75; padding-left: 7px; }
+  .nombre-principal { font-weight: 500; color: var(--text); display: block; margin-bottom: 2px; line-height: 1.3; }
+  .nombre-sub { font-size: 10px; color: var(--text3); }
+  .tag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 6px; font-weight: 500; white-space: nowrap; }
+  .badge-rnd { border-radius: 999px; }
+  .estado-nuevo   { background: var(--info-bg);    color: var(--info-fg); }
+  .estado-proximo { background: var(--warn-bg);    color: var(--warn-fg); }
+  .estado-abierto { background: var(--success-bg); color: var(--success-fg); }
+  .link-ext { color: var(--info-fg); text-decoration: none; font-size: 13px; }
+  .link-ext:hover { text-decoration: underline; }
+  .empty-row td { text-align: center; padding: 2.5rem; color: var(--text2); }
+  .error-row td  { text-align: center; padding: 2.5rem; color: #a32d2d; }
+
+  /* PAGINADOR */
+  .paginator { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--text2); }
+  .pag-btns { display: flex; gap: 4px; }
+  .pag-btn { padding: 3px 9px; font-size: 11px; background: none; border: 0.5px solid var(--border2); border-radius: 5px; cursor: pointer; color: var(--text); }
+  .pag-btn:disabled { opacity: 0.35; cursor: default; }
+
+  /* AI CHIPS */
+  .ai-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .ai-header { display: flex; align-items: center; gap: 7px; padding: 9px 13px; background: var(--surface2); border-bottom: 0.5px solid var(--border); font-size: 12px; font-weight: 500; color: var(--text2); }
+  .ai-chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 12px 14px; }
+  .ai-chip { font-size: 12px; padding: 6px 12px; border-radius: 6px; border: 0.5px solid var(--border2); background: var(--surface); color: var(--text); cursor: pointer; }
+  .ai-chip:hover { background: var(--surface2); }
+
+  /* spinner */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--info-fg); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 600px) {
+    .header { flex-direction: column; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <h1>🏥 Monitor de licitaciones</h1>
+      <p id="portal-subtitle">Cargando portales...</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="last-up" id="last-update">—</span>
+      <span class="badge-live"><span class="dot-anim"></span>En vivo</span>
+    </div>
+  </div>
+
+  <!-- MÉTRICAS -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">📄 Total</div>
+      <div class="metric-val" id="m-total">—</div>
+      <div class="metric-sub">licitaciones activas</div>
+    </div>
+    <div class="metric highlight">
+      <div class="metric-label">🏥 Mi rubro</div>
+      <div class="metric-val" id="m-rubro">—</div>
+      <div class="metric-sub">relevantes hoy</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">⭐ Nuevas</div>
+      <div class="metric-val" id="m-new">—</div>
+      <div class="metric-sub">publicadas hoy</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">⏰ Vencen pronto</div>
+      <div class="metric-val" id="m-prox">—</div>
+      <div class="metric-sub">próximos 3 días</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">🔌 Portales</div>
+      <div class="metric-val" id="m-portales">—</div>
+      <div class="metric-sub">activos</div>
+    </div>
+  </div>
+
+  <!-- FILTROS DE RUBRO -->
+  <div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;">Filtrar por rubro</div>
+  <div class="rubros">
+    <span class="rubro-chip rc-todos on" data-r="todos"     onclick="toggleRubro('todos')">📋 Todos</span>
+    <span class="rubro-chip rc-desc on"  data-r="descartables" onclick="toggleRubro('descartables')">💉 Descartables</span>
+    <span class="rubro-chip rc-tecmed on" data-r="tecmed"   onclick="toggleRubro('tecmed')">🖥 Tecnología médica</span>
+    <span class="rubro-chip rc-lab on"   data-r="lab"       onclick="toggleRubro('lab')">🔬 Laboratorio</span>
+    <span class="rubro-chip rc-farm on"  data-r="farmacia"  onclick="toggleRubro('farmacia')">💊 Farmacia</span>
+    <span class="rubro-chip rc-otros"    data-r="otros"     onclick="toggleRubro('otros')">• Otros</span>
+  </div>
+
+  <!-- PORTALES CONFIGURADOS -->
+  <div class="portales-box">
+    <div class="portales-header">
+      <span>🔌 Portales configurados</span>
+      <button class="btn-add" onclick="toggleForm()">+ Agregar portal</button>
+    </div>
+    <div class="portales-list" id="portales-list"></div>
+    <div class="add-form" id="add-form">
+      <div class="add-form-row">
+        <div class="field">
+          <label>Nombre del portal</label>
+          <input type="text" id="f-nombre" placeholder="ej: Hospital Austral" />
+        </div>
+        <div class="field">
+          <label>URL base</label>
+          <input type="text" id="f-url" placeholder="https://..." />
+        </div>
+        <div class="field" style="max-width:130px;">
+          <label>Color</label>
+          <select id="f-color">
+            <option value="teal">Verde</option>
+            <option value="blue">Azul</option>
+            <option value="purple">Violeta</option>
+            <option value="amber">Naranja</option>
+            <option value="coral">Rojo</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:6px;padding-top:14px;">
+          <button class="btn-save" onclick="addPortal()">✓ Guardar</button>
+          <button class="btn-save" onclick="toggleForm()">✕</button>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:8px;">
+        Después de agregar el portal, agregá la función de scraping correspondiente en <code>scraper.py</code> y actualizá el workflow.
+      </p>
+    </div>
+  </div>
+
+  <!-- CONTROLES DE BÚSQUEDA -->
+  <div class="controls">
+    <input type="text" id="q" placeholder="Buscar por descripción, organismo, nro. de proceso..." oninput="filterTable()" />
+    <select id="fp" onchange="filterTable()">
+      <option value="">Todos los portales</option>
+    </select>
+    <select id="ft" onchange="filterTable()">
+      <option value="">Todos los tipos</option>
+      <option value="Licitación Pública">Licitación Pública</option>
+      <option value="Licitación Privada">Licitación Privada</option>
+      <option value="Contratación Directa">Contratación Directa</option>
+      <option value="Contratación Menor">Contratación Menor</option>
+    </select>
+    <button class="btn-refresh" onclick="cargarDatos()">↻ Actualizar</button>
+  </div>
+
+  <!-- TABLA -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:32%">Proceso / organismo</th>
+          <th style="width:13%">Rubro</th>
+          <th style="width:13%">Portal</th>
+          <th style="width:14%">Tipo</th>
+          <th style="width:14%">Apertura</th>
+          <th style="width:10%">Estado</th>
+          <th style="width:4%"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text2)"><span class="spinner"></span>Cargando datos...</td></tr>
+      </tbody>
+    </table>
+    <div class="paginator">
+      <span id="pag-info">—</span>
+      <div class="pag-btns">
+        <button class="pag-btn" id="btn-prev" onclick="page(-1)" disabled>‹</button>
+        <button class="pag-btn" id="btn-next" onclick="page(1)"  disabled>›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IA -->
+  <div class="ai-box">
+    <div class="ai-header">✨ Análisis con IA</div>
+    <div class="ai-chips">
+      <button class="ai-chip" onclick="aiQ('prio')">¿Qué licitaciones de mi rubro priorizar hoy? →</button>
+      <button class="ai-chip" onclick="aiQ('vence')">¿Cuáles vencen pronto? →</button>
+      <button class="ai-chip" onclick="aiQ('docs')">¿Qué documentación suelen pedir? →</button>
+      <button class="ai-chip" onclick="aiQ('portales')">¿Qué otros portales debería monitorear? →</button>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ── CONFIG ──────────────────────────────────
+// Cambiá esto por la URL raw de tu JSON en GitHub:
+// https://raw.githubusercontent.com/TU-USUARIO/TU-REPO/main/data/licitaciones.json
+const DATA_URL = "./data/licitaciones.json";
+
+const PAGE_SIZE = 12;
+const COLORES = {
+  blue:   { bg:'var(--blue-bg)',   fg:'var(--blue-fg)',   dot:'#378ADD' },
+  teal:   { bg:'var(--teal-bg)',   fg:'var(--teal-fg)',   dot:'#1D9E75' },
+  purple: { bg:'var(--purple-bg)', fg:'var(--purple-fg)', dot:'#7F77DD' },
+  amber:  { bg:'var(--amber-bg)',  fg:'var(--amber-fg)',  dot:'#EF9F27' },
+  coral:  { bg:'var(--coral-bg)',  fg:'var(--coral-fg)',  dot:'#D85A30' },
+};
+const RUBRO_LABELS = { descartables:'Descartables', tecmed:'Tec. médica', lab:'Laboratorio', farmacia:'Farmacia', otros:'Otro' };
+const RUBROS_MEDICOS = ['descartables','tecmed','lab','farmacia'];
+
+let allData = [], filtered = [], portalesConfig = [], currentPage = 0;
+let activeRubros = new Set(RUBROS_MEDICOS);
+let showOtros = false;
+
+// ── CARGAR DATOS ─────────────────────────────
+async function cargarDatos() {
+  setLoading(true);
+  try {
+    const resp = await fetch(DATA_URL + '?t=' + Date.now());
+    if (!resp.ok) throw new Error('No se pudo cargar el JSON');
+    const json = await resp.json();
+
+    allData = json.licitaciones || [];
+    portalesConfig = json.portales || [];
+
+    // Agregar portales guardados localmente
+    const locales = JSON.parse(localStorage.getItem('portales_extra') || '[]');
+    portalesConfig = [...portalesConfig, ...locales];
+
+    const upd = new Date(json.actualizacion);
+    document.getElementById('last-update').textContent =
+      'Actualizado: ' + upd.toLocaleDateString('es-AR') + ' ' + upd.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+
+    renderPortales();
+    updateMetrics();
+    filterTable();
+  } catch(e) {
+    document.getElementById('tbody').innerHTML =
+      `<tr class="error-row"><td colspan="7">❌ ${e.message}. Verificá que el archivo data/licitaciones.json existe en tu repositorio.</td></tr>`;
+  }
+}
+
+function setLoading(on) {
+  if (on) document.getElementById('tbody').innerHTML =
+    '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text2)"><span class="spinner"></span>Cargando...</td></tr>';
+}
+
+// ── PORTALES ─────────────────────────────────
+function renderPortales() {
+  const list = document.getElementById('portales-list');
+  const sel  = document.getElementById('fp');
+  sel.innerHTML = '<option value="">Todos los portales</option>';
+  list.innerHTML = portalesConfig.map(p => {
+    const c = COLORES[p.color] || COLORES.blue;
+    sel.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+    return `<div class="portal-pill">
+      <span class="portal-dot" style="background:${c.dot}"></span>
+      <div><div class="portal-name">${p.nombre}</div><div class="portal-sub">Activo</div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('portal-subtitle').textContent = portalesConfig.map(p=>p.nombre).join(' · ');
+  document.getElementById('m-portales').textContent = portalesConfig.length;
+}
+
+function toggleForm() { document.getElementById('add-form').classList.toggle('open'); }
+
+function addPortal() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const url    = document.getElementById('f-url').value.trim();
+  const color  = document.getElementById('f-color').value;
+  if (!nombre) { alert('Ingresá el nombre del portal'); return; }
+  const nuevo = { id: 'custom_' + Date.now(), nombre, url: url||'#', color };
+  const extras = JSON.parse(localStorage.getItem('portales_extra') || '[]');
+  extras.push(nuevo);
+  localStorage.setItem('portales_extra', JSON.stringify(extras));
+  portalesConfig.push(nuevo);
+  document.getElementById('f-nombre').value = '';
+  document.getElementById('f-url').value = '';
+  toggleForm();
+  renderPortales();
+}
+
+// ── RUBROS ────────────────────────────────────
+function toggleRubro(r) {
+  if (r === 'todos') {
+    activeRubros = new Set(RUBROS_MEDICOS);
+    showOtros = false;
+  } else if (r === 'otros') {
+    showOtros = !showOtros;
+  } else {
+    if (activeRubros.has(r) && activeRubros.size > 1) activeRubros.delete(r);
+    else activeRubros.add(r);
+  }
+  document.querySelectorAll('.rubro-chip').forEach(c => {
+    const cr = c.dataset.r;
+    const on = cr==='todos' ? (activeRubros.size===4 && !showOtros)
+             : cr==='otros' ? showOtros
+             : activeRubros.has(cr);
+    c.classList.toggle('on', on);
+  });
+  filterTable();
+}
+
+// ── MÉTRICAS ──────────────────────────────────
+function updateMetrics() {
+  document.getElementById('m-total').textContent  = allData.length;
+  document.getElementById('m-rubro').textContent  = allData.filter(d=>RUBROS_MEDICOS.includes(d.rubro)).length;
+  document.getElementById('m-new').textContent    = allData.filter(d=>d.estado==='nuevo').length;
+  document.getElementById('m-prox').textContent   = allData.filter(d=>d.estado==='proximo').length;
+}
+
+// ── FILTROS + TABLA ───────────────────────────
+function filterTable() {
+  const q  = document.getElementById('q').value.toLowerCase();
+  const fp = document.getElementById('fp').value;
+  const ft = document.getElementById('ft').value;
+  filtered = allData.filter(d => {
+    const rubroOk = activeRubros.has(d.rubro) || (showOtros && d.rubro==='otros');
+    const qOk = !q || (d.nombre||'').toLowerCase().includes(q)
+                    || (d.organismo||'').toLowerCase().includes(q)
+                    || (d.nro||'').toLowerCase().includes(q);
+    return rubroOk && qOk && (!fp||d.portalId===fp) && (!ft||d.tipo===ft);
+  });
+  currentPage = 0;
+  renderTabla();
+}
+
+function renderTabla() {
+  const tbody = document.getElementById('tbody');
+  const start = currentPage * PAGE_SIZE;
+  const slice = filtered.slice(start, start + PAGE_SIZE);
+  const total = filtered.length;
+  document.getElementById('pag-info').textContent =
+    total === 0 ? 'Sin resultados' : `${start+1}–${Math.min(start+PAGE_SIZE,total)} de ${total}`;
+  document.getElementById('btn-prev').disabled = currentPage === 0;
+  document.getElementById('btn-next').disabled = start + PAGE_SIZE >= total;
+
+  if (!slice.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No hay licitaciones con los filtros seleccionados.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = slice.map(d => {
+    const portal = portalesConfig.find(p=>p.id===d.portalId) || { nombre: d.portalId, color:'blue' };
+    const pc = COLORES[portal.color] || COLORES.blue;
+    const rs = RUBRO_STYLES[d.rubro] || RUBRO_STYLES.otros;
+    const estadoCls = d.estado==='nuevo' ? 'estado-nuevo' : d.estado==='proximo' ? 'estado-proximo' : 'estado-abierto';
+    const estadoTxt = d.estado==='nuevo' ? 'Nuevo' : d.estado==='proximo' ? 'Próximo' : 'Abierto';
+    const rel = RUBROS_MEDICOS.includes(d.rubro);
+    return `<tr${rel?' class="relevant"':''}>
+      <td><span class="nombre-principal">${esc(d.nombre)}</span><span class="nombre-sub">${esc(d.nro)} · ${esc(d.organismo||'')}</span></td>
+      <td><span class="tag badge-rnd" style="background:${rs.bg};color:${rs.fg}">${RUBRO_LABELS[d.rubro]||d.rubro}</span></td>
+      <td><span class="tag" style="background:${pc.bg};color:${pc.fg}">${esc(portal.nombre)}</span></td>
+      <td style="font-size:11px;color:var(--text2)">${esc(d.tipo)}</td>
+      <td style="font-size:11px">${esc(d.apertura)}</td>
+      <td><span class="tag badge-rnd ${estadoCls}">${estadoTxt}</span></td>
+      <td><a class="link-ext" href="${esc(d.url||'#')}" target="_blank" rel="noopener">↗</a></td>
+    </tr>`;
+  }).join('');
+}
+
+const RUBRO_STYLES = {
+  descartables: { bg:'var(--teal-bg)',   fg:'var(--teal-fg)'   },
+  tecmed:       { bg:'var(--blue-bg)',   fg:'var(--blue-fg)'   },
+  lab:          { bg:'var(--purple-bg)', fg:'var(--purple-fg)' },
+  farmacia:     { bg:'var(--amber-bg)',  fg:'var(--amber-fg)'  },
+  otros:        { bg:'var(--surface2)',  fg:'var(--text2)'     },
+};
+
+function page(dir) { currentPage += dir; renderTabla(); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── IA ────────────────────────────────────────
+function getSummary() {
+  return filtered.slice(0,10).map(d=>`"${d.nombre}" (${RUBRO_LABELS[d.rubro]||d.rubro}, ${d.apertura}, ${d.estado})`).join('; ') || 'Sin datos cargados aún.';
+}
+function aiQ(tipo) {
+  const msgs = {
+    prio:     `Soy proveedor de insumos médicos en Argentina. Estas son las licitaciones de hoy: ${getSummary()}. ¿Cuáles me conviene priorizar y por qué?`,
+    vence:    `Tengo estas licitaciones: ${getSummary()}. ¿Cuáles vencen pronto y debo atender urgente? Ordenalas por prioridad.`,
+    docs:     `Para licitaciones de descartables, tecnología médica, laboratorio y farmacia en Argentina (COMPR.AR, BAC, PBAC), ¿qué documentación suelen requerir habitualmente para inscribirse como proveedor y presentar oferta?`,
+    portales: `Soy proveedor de descartables, tecnología médica, laboratorio y farmacia en Argentina. Además de COMPR.AR, BAC y PBAC, ¿qué portales de hospitales privados, prepagas, obras sociales y empresas debería monitorear para encontrar licitaciones?`,
+  };
+  if (typeof sendPrompt === 'function') sendPrompt(msgs[tipo]);
+  else alert('Esta función solo está disponible dentro del chat de Claude.');
+}
+
+cargarDatos();
+</script>
+</body>
+</html>

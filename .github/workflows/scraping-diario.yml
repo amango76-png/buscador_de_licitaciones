@@ -1,0 +1,55 @@
+name: Monitor de Licitaciones — Scraping Diario
+
+on:
+  schedule:
+    # Corre todos los días a las 7:00am hora Argentina (UTC-3 → 10:00 UTC)
+    - cron: "0 10 * * 1-5"   # lunes a viernes
+    - cron: "0 11 * * 6"     # sábados a las 8am AR (por si hay publicaciones)
+  workflow_dispatch:          # permite correrlo manualmente desde GitHub
+
+permissions:
+  contents: write             # necesario para hacer commit del JSON
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar scraper
+        run: python scraper.py
+
+      - name: Verificar datos generados
+        run: |
+          echo "── Resultado del scraping ──"
+          cat data/licitaciones.json | python -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          print(f'Actualización: {d[\"actualizacion\"]}')
+          print(f'Total licitaciones: {d[\"total\"]}')
+          rubros = {}
+          for l in d['licitaciones']:
+              rubros[l['rubro']] = rubros.get(l['rubro'], 0) + 1
+          for r, n in sorted(rubros.items()):
+              print(f'  {r}: {n}')
+          "
+
+      - name: Commit y push de datos actualizados
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/licitaciones.json
+          git diff --staged --quiet || git commit -m "datos: actualización automática $(date +'%Y-%m-%d %H:%M') AR"
+          git push

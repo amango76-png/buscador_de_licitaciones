@@ -1,0 +1,9 @@
+{
+  "actualizacion": "2026-05-27T07:00:00",
+  "total": 0,
+  "licitaciones": [],
+  "portales": [
+    { "id": "comprar", "nombre": "COMPR.AR",            "url": "https://comprar.gob.ar",            "color": "blue"  },
+    { "id": "bac",     "nombre": "Buenos Aires Compras", "url": "https://buenosairescompras.gob.ar", "color": "teal"  }
+  ]
+}
