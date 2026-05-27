@@ -44,6 +44,7 @@ PALABRAS_CLAVE = {
 }
 
 PORTALES = [
+    {"id": "garrahan", "nombre": "Garrahan", "url": "https://compras.garrahan.gov.ar/Licitaciones/Llamado", "color": "coral"},
     {"id": "comprar", "nombre": "COMPR.AR",            "url": "https://comprar.gob.ar",            "color": "blue"},
     {"id": "bac", "nombre": "PBAC Prov. BA", "url": "https://pbac.cgp.gba.gov.ar", "color": "teal"},
 ]
@@ -214,7 +215,52 @@ def scrape_bac() -> list[dict]:
         print(f"     PBAC error: {e}")
     return licitaciones , 
 
-
+def scrape_garrahan() -> list[dict]:
+    """Hospital Garrahan — página pública sin login."""
+    licitaciones = []
+    try:
+        url = "https://compras.garrahan.gov.ar/Licitaciones/Llamado"
+        resp = requests.get(url, headers=HEADERS, timeout=20)
+        soup = BeautifulSoup(resp.text, "html.parser")
+        tabla = soup.find("table")
+        if not tabla:
+            print("     Garrahan: sin tabla encontrada")
+            return []
+        filas = tabla.find_all("tr")[2:]  # saltar 2 filas de header
+        for fila in filas:
+            celdas = fila.find_all("td")
+            if len(celdas) < 5:
+                continue
+            anio    = celdas[0].get_text(strip=True)
+            tipo    = celdas[1].get_text(strip=True)
+            nro     = celdas[2].get_text(strip=True)
+            nombre  = celdas[3].get_text(strip=True)
+            apertura = celdas[4].get_text(strip=True)
+            hora    = celdas[5].get_text(strip=True) if len(celdas) > 5 else ""
+            if not nombre:
+                continue
+            # buscar link al pliego
+            link_tag = fila.find("a")
+            link = link_tag["href"] if link_tag and link_tag.get("href") else url
+            if link.startswith("/"):
+                link = "https://compras.garrahan.gov.ar" + link
+            rubro = clasificar_rubro(nombre + " " + tipo)
+            licitaciones.append({
+                "nro": f"{anio}-{nro}",
+                "nombre": nombre,
+                "tipo": tipo,
+                "apertura": f"{apertura} {hora}".strip(),
+                "organismo": "Hospital Garrahan",
+                "estado": "proximo",
+                "rubro": rubro,
+                "portalId": "garrahan",
+                "url": link,
+                "fechaCarga": date.today().isoformat(),
+            })
+        print(f"     Garrahan: {len(licitaciones)} licitaciones")
+    except Exception as e:
+        print(f"     Garrahan error: {e}")
+    return licitaciones
 
 
 # ─────────────────────────────────────────────
@@ -235,6 +281,11 @@ def main():
     bac = scrape_bac()
     print(f"     Total: {len(bac)} licitaciones")
     todas.extend(bac)
+    
+    print("  → Consultando Hospital Garrahan...")
+    garrahan = scrape_garrahan()
+    todas.extend(garrahan)
+
 
     # Ordenar: médicos primero, luego por estado
     orden_rubro = {"descartables": 0, "tecmed": 1, "lab": 2, "farmacia": 3, "otros": 4}
